@@ -1,0 +1,18 @@
+sales_finance_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "dev.duckdb"
+      schema: dev
+      threads: 4
+    prod:
+      type: snowflake
+      account:   "YOUR_SNOWFLAKE_ACCOUNT"
+      user:      "YOUR_SNOWFLAKE_USER"
+      password:  "YOUR_SNOWFLAKE_PASSWORD"
+      role:      TRANSFORMER
+      database:  ANALYTICS_PROD
+      warehouse: TRANSFORMING_WH
+      schema:    dbt_prod
+      threads:   8

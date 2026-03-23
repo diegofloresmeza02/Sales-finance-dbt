@@ -1,0 +1,176 @@
+version: 2
+
+models:
+  - name: fct_completed_order_items
+    description: >
+      Grain: one row per order line item, shipped and delivered orders only. ~18M rows.
+      Revenue source of truth. Excludes cancelled, refunded, and in-progress orders.
+      COGS uses standard cost — see README for margin accuracy limitations.
+    meta:
+      owner: analytics-eng
+      business_owner: commercial-finance
+      sla: "daily refresh by 06:00 UTC"
+
+    columns:
+      - name: order_item_sk
+        description: >
+          Surrogate key (SHA-256 of cleaned order_item_id). Used for uniqueness testing.
+          If this test fails, check staging for upstream ERP prefix contamination.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_item_id
+        description: Natural key from ERP. Should be unique after stg_orders deduplication.
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+              # Relationship test catches orphaned order_items that slipped through staging.
+              # ~300/month in prod — these should be null-joined and filtered, not silently dropped.
+
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+      - name: order_status
+        description: Must be 'shipped' or 'delivered' in this table. Any other value = pipeline bug.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['shipped', 'delivered']
+              # This test is the most important one in the project.
+              # A cancelled or refunded order in this table means revenue recognition is broken.
+
+      - name: order_date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= '2020-01-01'"
+              # Pre-2020 orders have encoding issues from the legacy ERP migration.
+              # If any appear here, staging deduplication is pulling stale rows.
+
+      - name: revenue
+        description: Net revenue at line level (discount-adjusted). Not gross.
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              # Negative revenue at line level = data issue. Refunds are GL-only.
+
+      - name: gross_margin_pct
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between -0.5 and 1.5"
+              # Range is wide to handle outliers. Margins above 100% = missing COGS (has_missing_cost = true).
+              # Margins below -50% = pricing error or data issue. Both warrant investigation.
+
+      - name: has_missing_cost
+        description: >
+          True when cost_price was null (product archived without cost data).
+          ~8K rows/month affected. Gross profit is overstated for these rows.
+          Finance tracks the impacted SKUs manually.
+
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "order_status not in ('cancelled', 'refunded', 'pending', 'processing')"
+          name: assert_no_unrecognized_revenue_in_fct
+          # Belt-and-suspenders: the where clause in the model filters these,
+          # but if the var('completed_order_statuses') is modified incorrectly,
+          # this test is the backstop. Run on every deploy.
+
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [order_id, order_item_id]
+          name: assert_no_duplicate_order_lines
+          # Catches cases where stg_orders deduplication fails (e.g., same-timestamp race condition).
+
+
+  - name: dim_customer_360
+    description: >
+      Grain: one row per customer. ~2.1M rows including prospects.
+      Reflects current customer state. Use customers_snapshot for historical segment.
+      is_churn_risk is a heuristic flag, not a predictive model.
+
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+
+      - name: registration_date
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "<= current_date()"
+              # Future registration dates appear when CRM records are pre-loaded.
+              # They inflate "new customer" counts in monthly reporting.
+
+      - name: customer_tier
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['platinum', 'gold', 'silver', 'bronze', 'prospect']
+
+      - name: lifetime_revenue
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0 or lifetime_revenue is null"
+              # Null is valid for prospects. Negative lifetime_revenue would indicate
+              # refund data bleeding into the sales layer — should never happen.
+
+      - name: days_since_last_order
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0 or days_since_last_order is null"
+              # Negative values would mean last_order_date is in the future.
+              # Possible if ERP allows future-dated orders (it does, for pre-orders).
+
+
+  - name: agg_revenue_performance_monthly
+    description: >
+      Grain: one row per month × channel × region × category.
+      Primary commercial dashboard source.
+      WARNING: yoy_revenue_growth_pct is null when prior year month has no row.
+      See model header. No date spine yet.
+
+    columns:
+      - name: order_month
+        tests:
+          - not_null
+
+      - name: net_revenue
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: avg_gross_margin_pct
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between -0.5 and 1.5"
+
+      - name: new_customers
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [order_month, sales_channel, region, category]
+          name: assert_unique_monthly_grain

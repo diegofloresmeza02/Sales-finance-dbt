@@ -1,0 +1,52 @@
+version: 2
+
+# Seeds are sample data for local development and demo only.
+# They mirror the structure of the Fivetran-loaded RAW tables in production.
+# Do not use seed data for production runs.
+
+seeds:
+  - name: raw_orders
+    description: "Sample orders. Includes 1 intentional duplicate (ORD-001) to test stg_orders deduplication."
+    config:
+      column_types:
+        order_date: date
+        shipped_date: date
+        delivered_date: date
+        subtotal_amount: float
+        discount_amount: float
+        tax_amount: float
+        shipping_amount: float
+        total_amount: float
+
+  - name: raw_order_items
+    config:
+      column_types:
+        unit_price: float
+        discount_pct: float
+
+  - name: raw_customers
+    config:
+      column_types:
+        registration_date: date
+
+  - name: raw_products
+    config:
+      column_types:
+        cost_price: float
+        list_price: float
+
+  - name: raw_gl_entries
+    config:
+      column_types:
+        entry_date: date
+        amount: float
+
+  - name: raw_chart_of_accounts
+    config:
+      column_types:
+        is_income_statement: boolean
+
+  - name: raw_budgets
+    config:
+      column_types:
+        budgeted_amount: float

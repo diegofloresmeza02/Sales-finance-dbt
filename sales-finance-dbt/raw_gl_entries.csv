@@ -1,0 +1,20 @@
+entry_id,account_code,entry_date,entry_type,amount,description,reference_id,currency,_loaded_at
+GL-001,REV-1000,2024-01-31,credit,593.84,Revenue recognition Jan orders,ORD-001,usd,2024-02-02 00:00:00
+GL-002,REV-1000,2024-01-31,credit,206.18,Revenue recognition Jan orders,ORD-002,usd,2024-02-02 00:00:00
+GL-003,REV-1000,2024-01-31,credit,1449.07,Revenue recognition Jan orders,ORD-003,usd,2024-02-02 00:00:00
+GL-004,REV-1000,2024-01-31,credit,691.51,Revenue recognition Jan orders,ORD-004,usd,2024-02-02 00:00:00
+GL-005,COGS-2000,2024-01-31,debit,747.00,COGS Jan shipments,,usd,2024-02-02 00:00:00
+GL-006,OPEX-3000,2024-01-31,debit,1200.00,Operating expenses January,,usd,2024-02-05 00:00:00
+GL-007,REV-1000,2024-02-29,credit,2492.03,Revenue recognition Feb orders,ORD-006,usd,2024-03-03 00:00:00
+GL-008,REV-1000,2024-02-29,credit,159.64,Revenue recognition Feb orders,ORD-007,usd,2024-03-03 00:00:00
+GL-009,REV-1000,2024-02-29,credit,185.39,Revenue recognition Feb orders,ORD-008,usd,2024-03-03 00:00:00
+GL-010,REV-1000,2024-02-29,credit,73.44,Revenue recognition Feb orders,ORD-010,usd,2024-03-03 00:00:00
+GL-011,COGS-2000,2024-02-29,debit,1580.00,COGS Feb shipments,,usd,2024-03-03 00:00:00
+GL-012,OPEX-3000,2024-02-29,debit,1350.00,Operating expenses February,,usd,2024-03-06 00:00:00
+GL-013,REV-1000,2024-03-31,credit,1928.27,Revenue recognition Mar orders,ORD-011,usd,2024-04-04 00:00:00
+GL-014,REV-1000,2024-03-31,credit,535.96,Revenue recognition Mar orders,ORD-013,usd,2024-04-04 00:00:00
+GL-015,REV-1000,2024-03-31,credit,1656.83,Revenue recognition Mar orders,ORD-014,usd,2024-04-04 00:00:00
+GL-016,REV-1000,2024-03-31,credit,113.24,Revenue recognition Mar orders,ORD-015,usd,2024-04-04 00:00:00
+GL-017,COGS-2000,2024-03-31,debit,1890.00,COGS Mar shipments,,usd,2024-04-04 00:00:00
+GL-018,OPEX-3000,2024-03-31,debit,1500.00,Operating expenses March,,usd,2024-04-07 00:00:00
+GL-019,REV-REFUND,2024-03-31,debit,159.64,Refund contra-revenue ORD-012,ORD-012,usd,2024-04-04 00:00:00

@@ -1,0 +1,10 @@
+account_code,account_name,account_type,account_subtype,normal_balance,is_income_statement,_loaded_at
+REV-1000,Operating Revenue,revenue,operating_revenue,credit,true,2024-01-01 00:00:00
+REV-REFUND,Refund Contra-Revenue,revenue,refund,debit,true,2024-01-01 00:00:00
+COGS-2000,Cost of Goods Sold,expense,cogs,debit,true,2024-01-01 00:00:00
+OPEX-3000,Operating Expenses,expense,opex,debit,true,2024-01-01 00:00:00
+DEPR-4000,Depreciation & Amortization,expense,depreciation,debit,true,2024-01-01 00:00:00
+INT-5000,Interest Expense,expense,interest_expense,debit,true,2024-01-01 00:00:00
+TAX-6000,Income Tax Expense,expense,income_tax,debit,true,2024-01-01 00:00:00
+CASH-7000,Cash & Equivalents,asset,current_asset,debit,false,2024-01-01 00:00:00
+AR-8000,Accounts Receivable,asset,current_asset,debit,false,2024-01-01 00:00:00

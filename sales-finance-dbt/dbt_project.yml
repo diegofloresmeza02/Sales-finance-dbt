@@ -1,0 +1,60 @@
+name: 'sales_finance_analytics'
+version: '1.0.0'
+config-version: 2
+
+profile: 'sales_finance_analytics'
+
+model-paths:    ["models"]
+analysis-paths: ["analyses"]
+test-paths:     ["tests"]
+seed-paths:     ["seeds"]
+macro-paths:    ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  sales_finance_analytics:
+
+    staging:
+      +materialized: view
+      +schema: staging
+      # Views only — staging is never queried directly by BI tools.
+      # Cost savings: ~40% vs materializing as tables on a 50M-row dataset.
+
+    intermediate:
+      +materialized: ephemeral
+      # Ephemeral = inlined at compile time, never stored in Snowflake.
+      # The order_line_economics join runs once per dbt invocation
+      # and its result is shared across all downstream marts.
+
+    marts:
+      sales:
+        +materialized: table
+        +schema: marts
+        # fct_completed_order_items is a candidate for incremental materialization.
+        # Current full refresh: ~8 min on SMALL warehouse.
+        # Target after incremental: ~45s with 3-day lookback window.
+        # Blocked on: confirming late-arriving status updates SLA with engineering.
+
+        fct_completed_order_items:
+          +cluster_by: ["order_date", "sales_channel"]
+          # Clustering on these two columns eliminates micro-partition scanning
+          # for 90%+ of Looker/Tableau dashboard queries that filter by date + channel.
+
+      finance:
+        +materialized: table
+        +schema: marts
+
+vars:
+  # Earliest date we have clean GL data. Pre-2020 data has encoding issues
+  # in the legacy ERP export — exclude by default.
+  start_date: '2020-01-01'
+  currency: 'USD'
+
+  # Revenue recognition statuses — used in fct_completed_order_items and int_order_line_economics.
+  # Change here propagates to all models automatically.
+  completed_order_statuses: ['shipped', 'delivered']

@@ -1,0 +1,4 @@
+budget_id,account_code,fiscal_year,month_number,budgeted_amount,currency,_loaded_at
+BUD-001,REV_TOTAL,2024,1,2800.00,usd,2024-01-01 00:00:00
+BUD-002,REV_TOTAL,2024,2,3100.00,usd,2024-01-01 00:00:00
+BUD-003,REV_TOTAL,2024,3,3500.00,usd,2024-01-01 00:00:00

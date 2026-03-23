@@ -1,0 +1,94 @@
+version: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# In production: these point to Snowflake RAW database tables loaded by Fivetran.
+# For local development / demo: run `dbt seed` first, then these sources
+# will resolve to the seed tables in your target schema.
+#
+# To switch between prod and dev sources, override the database/schema
+# in your profiles.yml target — do not change this file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+sources:
+  - name: raw_sales
+    description: "Sales data from the ERP via Fivetran. In dev, populated by dbt seed."
+    schema: "{{ 'main' if target.type == 'duckdb' else 'SALES' }}"
+    database: "{{ target.schema if target.type == 'duckdb' else 'RAW' }}"
+
+    tables:
+      - name: orders
+        identifier: raw_orders
+        description: "Raw orders. Contains one row per status change (ERP re-insert behavior)."
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+        columns:
+          - name: order_id
+            tests: [not_null]
+          - name: customer_id
+            tests: [not_null]
+          - name: order_date
+            tests: [not_null]
+          - name: status
+            tests:
+              - accepted_values:
+                  values: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'Shipped', 'SHIPPED']
+
+      - name: order_items
+        identifier: raw_order_items
+        description: "Order line items. Effectively immutable after creation."
+        columns:
+          - name: order_item_id
+            tests: [not_null]
+          - name: order_id
+            tests: [not_null]
+          - name: quantity
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "> 0"
+
+      - name: customers
+        identifier: raw_customers
+        columns:
+          - name: customer_id
+            tests: [unique, not_null]
+
+      - name: products
+        identifier: raw_products
+        columns:
+          - name: product_id
+            tests: [unique, not_null]
+
+  - name: raw_finance
+    description: "Finance data from the accounting system via Fivetran."
+    schema: "{{ 'main' if target.type == 'duckdb' else 'FINANCE' }}"
+    database: "{{ target.schema if target.type == 'duckdb' else 'RAW' }}"
+
+    tables:
+      - name: gl_entries
+        identifier: raw_gl_entries
+        description: "General ledger entries. entry_date = accounting period, not posting date."
+        loaded_at_field: _loaded_at
+        freshness:
+          warn_after: {count: 168, period: hour}
+          error_after: {count: 336, period: hour}
+        columns:
+          - name: entry_id
+            tests: [unique, not_null]
+          - name: entry_type
+            tests:
+              - accepted_values:
+                  values: ['debit', 'credit']
+
+      - name: chart_of_accounts
+        identifier: raw_chart_of_accounts
+        columns:
+          - name: account_code
+            tests: [unique, not_null]
+
+      - name: budgets
+        identifier: raw_budgets
+        columns:
+          - name: budget_id
+            tests: [unique, not_null]

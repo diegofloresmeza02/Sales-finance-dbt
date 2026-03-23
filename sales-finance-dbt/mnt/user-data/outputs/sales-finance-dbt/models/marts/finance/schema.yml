@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  - name: fct_gl_activity_monthly
+    description: >
+      Grain: one row per account × month. P&L accounts only. ~4K rows.
+      Note: GL data for the current month is incomplete until ~5th business day.
+      Do not use for current-month reporting until accounting team confirms close.
+
+    columns:
+      - name: account_code
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_chart_of_accounts')
+              field: account_code
+              # Failed relationship = GL entry posted against a non-existent account.
+              # Usually means chart_of_accounts hasn't been synced after a new account was created.
+
+      - name: entry_month
+        tests:
+          - not_null
+
+      - name: net_amount
+        tests:
+          - not_null
+          # Not testing >= 0 here: expense accounts can have net credit balances
+          # (e.g., vendor credits, reversed accruals). Negative net_amount is valid.
+
+      - name: signed_amount
+        tests:
+          - not_null
+          # If signed_amount is null, stg_gl_entries received an unexpected entry_type.
+          # Check source for values other than 'debit' and 'credit'.
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [account_code, entry_month]
+          name: assert_unique_account_month_grain
+          # Duplicates here mean the grouping in int_gl_classified is broken.
+          # Most likely cause: account_code changed mid-month in the chart of accounts.
+
+
+  - name: agg_income_statement_monthly
+    description: >
+      Grain: one row per calendar month. Full P&L.
+      Budget variance only at revenue level — COGS and OPEX budget not yet available.
+      Do not use for final month-end reporting until accounting close is confirmed.
+
+    columns:
+      - name: entry_month
+        tests:
+          - unique
+          - not_null
+
+      - name: revenue
+        description: Operating revenue only. Refund contra-entries excluded — see README.
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+              # Negative revenue would mean more refund GL entries than revenue entries
+              # for a given month. Theoretically impossible but has happened during
+              # manual adjustment periods. Triggers a finance review.
+
+      - name: gross_margin_pct
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between -0.5 and 1"
+              # Below -50% = COGS data issue (not a business outcome).
+              # Above 100% = revenue posting issue or COGS not loaded for the month.
+
+      - name: ebitda_margin_pct
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between -2 and 1"
+              # Wide range: early months had high OPEX relative to revenue.
+              # Below -200% would be anomalous and likely a data issue.
+
+      - name: net_income
+        # Not testing sign here: net losses are valid business outcomes.

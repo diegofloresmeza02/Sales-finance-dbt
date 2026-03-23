@@ -1,0 +1,11 @@
+product_id,sku,product_name,category,subcategory,brand,cost_price,list_price,is_active,_loaded_at
+PROD-001,SKU-ELC-001,Monitor 27" 4K,electronics,monitors,ViewMax,280.00,499.00,true,2024-01-01 00:00:00
+PROD-002,SKU-ELC-002,Teclado Mecánico RGB,electronics,peripherals,KeyPro,45.00,129.00,true,2024-01-01 00:00:00
+PROD-003,SKU-ELC-003,Mouse Inalámbrico,electronics,peripherals,KeyPro,18.00,59.00,true,2024-01-01 00:00:00
+PROD-004,SKU-OFF-001,Silla Ergonómica,office,chairs,ErgoDesk,210.00,589.00,true,2024-01-01 00:00:00
+PROD-005,SKU-OFF-002,Escritorio Ajustable,office,desks,ErgoDesk,320.00,799.00,true,2024-01-01 00:00:00
+PROD-006,SKU-ELC-004,Laptop Stand Aluminio,electronics,accessories,DeskMate,22.00,79.00,true,2024-01-01 00:00:00
+PROD-007,SKU-OFF-003,Lámpara LED Escritorio,office,lighting,LuxDesk,35.00,89.00,true,2024-01-01 00:00:00
+PROD-008,SKU-ELC-005,Hub USB-C 7 puertos,electronics,accessories,DeskMate,28.00,89.00,true,2024-01-01 00:00:00
+PROD-009,SKU-OFF-004,Organizador Cables,office,accessories,DeskMate,8.00,29.00,true,2024-01-01 00:00:00
+PROD-010,SKU-ELC-006,Webcam 1080p,electronics,peripherals,ViewMax,55.00,149.00,false,2024-01-01 00:00:00
